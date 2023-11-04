@@ -8,7 +8,8 @@ from functools import wraps, partial
 
 import aniso8601
 import yaml
-from flask import current_app, json, request as flask_request, _app_ctx_stack
+from flask import current_app, json, request as flask_request
+from flask.globals import app_ctx
 from jinja2 import BaseLoader, ChoiceLoader, TemplateNotFound
 from werkzeug.local import LocalProxy
 from cachelib.simple import SimpleCache
@@ -549,43 +550,43 @@ class Ask(object):
 
     @property
     def request(self):
-        return getattr(_app_ctx_stack.top, '_ask_request', None)
+        return getattr(app_ctx, '_ask_request', None)
 
     @request.setter
     def request(self, value):
-        _app_ctx_stack.top._ask_request = value
+        app_ctx._ask_request = value
 
     @property
     def session(self):
-        return getattr(_app_ctx_stack.top, '_ask_session', models._Field())
+        return getattr(app_ctx, '_ask_session', models._Field())
 
     @session.setter
     def session(self, value):
-        _app_ctx_stack.top._ask_session = value
+        app_ctx._ask_session = value
 
     @property
     def version(self):
-        return getattr(_app_ctx_stack.top, '_ask_version', None)
+        return getattr(app_ctx, '_ask_version', None)
 
     @version.setter
     def version(self, value):
-        _app_ctx_stack.top._ask_version = value
+        app_ctx._ask_version = value
 
     @property
     def context(self):
-        return getattr(_app_ctx_stack.top, '_ask_context', None)
+        return getattr(app_ctx, '_ask_context', None)
 
     @context.setter
     def context(self, value):
-        _app_ctx_stack.top._ask_context = value
+        app_ctx._ask_context = value
 
     @property
     def convert_errors(self):
-        return getattr(_app_ctx_stack.top, '_ask_convert_errors', None)
+        return getattr(app_ctx, '_ask_convert_errors', None)
 
     @convert_errors.setter
     def convert_errors(self, value):
-        _app_ctx_stack.top._ask_convert_errors = value
+        app_ctx._ask_convert_errors = value
 
     @property
     def current_stream(self):

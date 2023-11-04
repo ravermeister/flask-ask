@@ -1,10 +1,12 @@
 import inspect
-from flask import json
-from xml.etree import ElementTree
-import aniso8601
-from .core import session, context, current_stream, stream_cache, dbgdump
-from .cache import push_stream
 import uuid
+from xml.etree import ElementTree
+
+import aniso8601
+from flask import json
+
+from .cache import push_stream
+from .core import session, context, current_stream, stream_cache, dbgdump
 
 
 class _Field(dict):
@@ -76,8 +78,9 @@ class _Response(object):
 
         self._response['card'] = card
         return self
-    
-    def list_display_render(self, template=None, title=None, backButton='HIDDEN', token=None, background_image_url=None, image=None, listItems=None, hintText=None):
+
+    def list_display_render(self, template=None, title=None, backButton='HIDDEN', token=None, background_image_url=None,
+                            image=None, listItems=None, hintText=None):
         directive = [
             {
                 'type': 'Display.RenderTemplate',
@@ -89,19 +92,19 @@ class _Response(object):
                 }
             }
         ]
-        
+
         if background_image_url is not None:
             directive[0]['template']['backgroundImage'] = {
-               'sources': [
-                   {'url': background_image_url}
-               ]
+                'sources': [
+                    {'url': background_image_url}
+                ]
             }
 
         if hintText is not None:
             hint = {
-                'type':'Hint',
+                'type': 'Hint',
                 'hint': {
-                    'type':"PlainText",
+                    'type': "PlainText",
                     'text': hintText
                 }
             }
@@ -109,7 +112,8 @@ class _Response(object):
         self._response['directives'] = directive
         return self
 
-    def display_render(self, template=None, title=None, backButton='HIDDEN', token=None, background_image_url=None, image=None, text=None, hintText=None):
+    def display_render(self, template=None, title=None, backButton='HIDDEN', token=None, background_image_url=None,
+                       image=None, text=None, hintText=None):
         directive = [
             {
                 'type': 'Display.RenderTemplate',
@@ -121,29 +125,29 @@ class _Response(object):
                 }
             }
         ]
-        
+
         if background_image_url is not None:
             directive[0]['template']['backgroundImage'] = {
-               'sources': [
-                   {'url': background_image_url}
-               ]
+                'sources': [
+                    {'url': background_image_url}
+                ]
             }
-        
+
         if image is not None:
             directive[0]['template']['image'] = {
                 'sources': [
                     {'url': image}
                 ]
             }
-            
+
         if token is not None:
             directive[0]['template']['token'] = token
-            
+
         if hintText is not None:
             hint = {
-                'type':'Hint',
+                'type': 'Hint',
                 'hint': {
-                    'type':"PlainText",
+                    'type': "PlainText",
                     'text': hintText
                 }
             }
@@ -171,7 +175,7 @@ class _Response(object):
             'response': self._response,
             'sessionAttributes': session.attributes
         }
-        
+
         kw = {}
         if hasattr(session, 'attributes_encoder'):
             json_encoder = session.attributes_encoder
@@ -207,14 +211,14 @@ class buy(_Response):
         self._response = {
             'shouldEndSession': True,
             'directives': [{
-              'type': 'Connections.SendRequest',
-              'name': 'Buy',          
-              'payload': {
-                         'InSkillProduct': {
-                             'productId': productId
-                         }
-               },
-              'token': 'correlationToken'              
+                'type': 'Connections.SendRequest',
+                'name': 'Buy',
+                'payload': {
+                    'InSkillProduct': {
+                        'productId': productId
+                    }
+                },
+                'token': 'correlationToken'
             }]
         }
 
@@ -225,16 +229,17 @@ class refund(_Response):
         self._response = {
             'shouldEndSession': True,
             'directives': [{
-              'type': 'Connections.SendRequest',
-              'name': 'Cancel',          
-              'payload': {
-                         'InSkillProduct': {
-                             'productId': productId
-                         }
-               },
-              'token': 'correlationToken'              
+                'type': 'Connections.SendRequest',
+                'name': 'Cancel',
+                'payload': {
+                    'InSkillProduct': {
+                        'productId': productId
+                    }
+                },
+                'token': 'correlationToken'
             }]
         }
+
 
 class upsell(_Response):
 
@@ -242,17 +247,18 @@ class upsell(_Response):
         self._response = {
             'shouldEndSession': True,
             'directives': [{
-              'type': 'Connections.SendRequest',
-              'name': 'Upsell',          
-              'payload': {
-                         'InSkillProduct': {
-                             'productId': productId
-                         },
-                         'upsellMessage': msg
-               },
-              'token': 'correlationToken'              
+                'type': 'Connections.SendRequest',
+                'name': 'Upsell',
+                'payload': {
+                    'InSkillProduct': {
+                        'productId': productId
+                    },
+                    'upsellMessage': msg
+                },
+                'token': 'correlationToken'
             }]
         }
+
 
 class delegate(_Response):
 
@@ -287,6 +293,7 @@ class elicit_slot(_Response):
         if updated_intent:
             self._response['directives'][0]['updatedIntent'] = updated_intent
 
+
 class confirm_slot(_Response):
     """
     Sends a ConfirmSlot directive.
@@ -308,11 +315,13 @@ class confirm_slot(_Response):
         if updated_intent:
             self._response['directives'][0]['updatedIntent'] = updated_intent
 
+
 class confirm_intent(_Response):
     """
     Sends a ConfirmIntent directive.
     
     """
+
     def __init__(self, speech, updated_intent=None):
         self._response = {
             'shouldEndSession': False,

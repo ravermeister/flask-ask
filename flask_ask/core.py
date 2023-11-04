@@ -1,21 +1,21 @@
-import os
-import sys
-import yaml
+import collections
 import inspect
 import io
+import os
+import sys
 from datetime import datetime
 from functools import wraps, partial
 
 import aniso8601
-from werkzeug.contrib.cache import SimpleCache
-from werkzeug.local import LocalProxy, LocalStack
-from jinja2 import BaseLoader, ChoiceLoader, TemplateNotFound
+import yaml
 from flask import current_app, json, request as flask_request, _app_ctx_stack
+from jinja2 import BaseLoader, ChoiceLoader, TemplateNotFound
+from werkzeug.local import LocalProxy
+from cachelib.simple import SimpleCache
 
 from . import verifier, logger
-from .convert import to_date, to_time, to_timedelta
 from .cache import top_stream, set_stream
-import collections
+from .convert import to_date, to_time, to_timedelta
 
 
 def find_ask():
@@ -53,7 +53,6 @@ current_stream = LocalProxy(lambda: find_ask().current_stream)
 stream_cache = LocalProxy(lambda: find_ask().stream_cache)
 
 from . import models
-
 
 _converters = {'date': to_date, 'time': to_time, 'timedelta': to_timedelta}
 
@@ -135,7 +134,7 @@ class Ask(object):
             raise TypeError("route is a required argument when app is not None")
 
         self.app = app
-        
+
         app.ask = self
 
         app.add_url_rule(self._route, view_func=self._flask_view_func, methods=['POST'])
@@ -209,6 +208,7 @@ class Ask(object):
         @wraps(f)
         def wrapper(*args, **kw):
             self._flask_view_func(*args, **kw)
+
         return f
 
     def session_ended(self, f):
@@ -229,6 +229,7 @@ class Ask(object):
         @wraps(f)
         def wrapper(*args, **kw):
             self._flask_view_func(*args, **kw)
+
         return f
 
     def intent(self, intent_name, mapping={}, convert={}, default={}):
@@ -255,6 +256,7 @@ class Ask(object):
                 returns no corresponding slot, or a slot with an empty value
                 default: {}
         """
+
         def decorator(f):
             self._intent_view_funcs[intent_name] = f
             self._intent_mappings[intent_name] = mapping
@@ -264,7 +266,9 @@ class Ask(object):
             @wraps(f)
             def wrapper(*args, **kw):
                 self._flask_view_func(*args, **kw)
+
             return f
+
         return decorator
 
     def default_intent(self, f):
@@ -274,6 +278,7 @@ class Ask(object):
         @wraps(f)
         def wrapper(*args, **kw):
             self._flask_view_func(*args, **kw)
+
         return f
 
     def display_element_selected(self, f):
@@ -294,10 +299,12 @@ class Ask(object):
         @wraps(f)
         def wrapper(*args, **kw):
             self._flask_view_func(*args, **kw)
+
         return f
 
-
-    def on_purchase_completed(self, mapping={'payload': 'payload','name':'name','status':'status','token':'token'}, convert={}, default={}):
+    def on_purchase_completed(self,
+                              mapping={'payload': 'payload', 'name': 'name', 'status': 'status', 'token': 'token'},
+                              convert={}, default={}):
         """Decorator routes an Connections.Response  to the wrapped function.
 
         Request is sent when Alexa completes the purchase flow. 
@@ -316,17 +323,20 @@ class Ask(object):
             logger.info(token)
             
         """
+
         def decorator(f):
             self._intent_view_funcs['Connections.Response'] = f
             self._intent_mappings['Connections.Response'] = mapping
             self._intent_converts['Connections.Response'] = convert
             self._intent_defaults['Connections.Response'] = default
+
             @wraps(f)
             def wrapper(*args, **kwargs):
                 self._flask_view_func(*args, **kwargs)
-            return f
-        return decorator
 
+            return f
+
+        return decorator
 
     def on_playback_started(self, mapping={'offset': 'offsetInMilliseconds'}, convert={}, default={}):
         """Decorator routes an AudioPlayer.PlaybackStarted Request to the wrapped function.
@@ -349,6 +359,7 @@ class Ask(object):
             logger.info('stream has token {}'.format(token))
             logger.info('Current position within the stream is {} ms'.format(offset))
         """
+
         def decorator(f):
             self._intent_view_funcs['AudioPlayer.PlaybackStarted'] = f
             self._intent_mappings['AudioPlayer.PlaybackStarted'] = mapping
@@ -358,7 +369,9 @@ class Ask(object):
             @wraps(f)
             def wrapper(*args, **kwargs):
                 self._flask_view_func(*args, **kwargs)
+
             return f
+
         return decorator
 
     def on_playback_finished(self, mapping={'offset': 'offsetInMilliseconds'}, convert={}, default={}):
@@ -380,6 +393,7 @@ class Ask(object):
 
         Audioplayer Requests do not include the stream URL, it must be accessed from current_stream.url
         """
+
         def decorator(f):
             self._intent_view_funcs['AudioPlayer.PlaybackFinished'] = f
             self._intent_mappings['AudioPlayer.PlaybackFinished'] = mapping
@@ -389,7 +403,9 @@ class Ask(object):
             @wraps(f)
             def wrapper(*args, **kwargs):
                 self._flask_view_func(*args, **kwargs)
+
             return f
+
         return decorator
 
     def on_playback_stopped(self, mapping={'offset': 'offsetInMilliseconds'}, convert={}, default={}):
@@ -418,6 +434,7 @@ class Ask(object):
 
         Audioplayer Requests do not include the stream URL, it must be accessed from current_stream.url
         """
+
         def decorator(f):
             self._intent_view_funcs['AudioPlayer.PlaybackStopped'] = f
             self._intent_mappings['AudioPlayer.PlaybackStopped'] = mapping
@@ -427,7 +444,9 @@ class Ask(object):
             @wraps(f)
             def wrapper(*args, **kwargs):
                 self._flask_view_func(*args, **kwargs)
+
             return f
+
         return decorator
 
     def on_playback_nearly_finished(self, mapping={'offset': 'offsetInMilliseconds'}, convert={}, default={}):
@@ -473,6 +492,7 @@ class Ask(object):
             _infodump('Stream at {} ms when Playback Request sent'.format(pos))
             _infodump('Stream holds the token {}'.format(stream_token))
         """
+
         def decorator(f):
             self._intent_view_funcs['AudioPlayer.PlaybackNearlyFinished'] = f
             self._intent_mappings['AudioPlayer.PlaybackNearlyFinished'] = mapping
@@ -482,7 +502,9 @@ class Ask(object):
             @wraps(f)
             def wrapper(*args, **kwargs):
                 self._flask_view_func(*args, **kwargs)
+
             return f
+
         return decorator
 
     def on_playback_failed(self, mapping={}, convert={}, default={}):
@@ -510,6 +532,7 @@ class Ask(object):
 
                     playerActivity - player state when the error occurred
         """
+
         def decorator(f):
             self._intent_view_funcs['AudioPlayer.PlaybackFailed'] = f
             self._intent_mappings['AudioPlayer.PlaybackFailed'] = mapping
@@ -519,7 +542,9 @@ class Ask(object):
             @wraps(f)
             def wrapper(*args, **kwargs):
                 self._flask_view_func(*args, **kwargs)
+
             return f
+
         return decorator
 
     @property
@@ -564,7 +589,7 @@ class Ask(object):
 
     @property
     def current_stream(self):
-        #return getattr(_app_ctx_stack.top, '_ask_current_stream', models._Field())
+        # return getattr(_app_ctx_stack.top, '_ask_current_stream', models._Field())
         user = self._get_user()
         if user:
             stream = top_stream(self.stream_cache, user)
@@ -618,6 +643,7 @@ class Ask(object):
 
         # Convert an environment variable to a WSGI "bytes-as-unicode" string
         enc, esc = sys.getfilesystemencoding(), 'surrogateescape'
+
         def unicode_to_wsgi(u):
             return u.encode(enc, esc).decode('iso-8859-1')
 
@@ -643,9 +669,9 @@ class Ask(object):
         body = json.dumps(event)
         environ['CONTENT_TYPE'] = 'application/json'
         environ['CONTENT_LENGTH'] = len(body)
-        
+
         PY3 = sys.version_info[0] == 3
-        
+
         if PY3:
             environ['wsgi.input'] = io.StringIO(body)
         else:
@@ -655,6 +681,7 @@ class Ask(object):
         # the application is invoked. It is used to set HTTP status and
         # headers. Read the WSGI spec for details (PEP3333).
         headers = []
+
         def start_response(status, response_headers, _exc_info=None):
             headers[:] = [status, response_headers]
 
@@ -682,12 +709,10 @@ class Ask(object):
             if hasattr(result, 'close'):
                 result.close()
 
-
     def _get_user(self):
         if self.context:
             return self.context.get('System', {}).get('user', {}).get('userId')
         return None
-
 
     def _alexa_request(self, verify=True):
         raw_body = flask_request.data
@@ -735,10 +760,9 @@ class Ask(object):
                     return datetime.utcfromtimestamp(timestamp)
                 except:
                     # relax the timestamp a bit in case it was sent in millis
-                    return datetime.utcfromtimestamp(timestamp/1000)
+                    return datetime.utcfromtimestamp(timestamp / 1000)
 
         raise ValueError('Invalid timestamp value! Cannot parse from either ISO8601 string or UTC timestamp.')
-
 
     def _update_stream(self):
         fresh_stream = models._Field()
@@ -771,7 +795,8 @@ class Ask(object):
         self.request = request_body.request
         self.version = request_body.version
         self.context = getattr(request_body, 'context', models._Field())
-        self.session = getattr(request_body, 'session', self.session) # to keep old session.attributes through AudioRequests
+        self.session = getattr(request_body, 'session',
+                               self.session)  # to keep old session.attributes through AudioRequests
 
         if not self.session:
             self.session = models._Field()
@@ -802,7 +827,8 @@ class Ask(object):
                 result = self._session_ended_view_func()
             else:
                 result = "{}", 200
-        elif request_type == 'IntentRequest' and ( self._intent_view_funcs or self._default_intent_view_func is not None ):
+        elif request_type == 'IntentRequest' and (
+                self._intent_view_funcs or self._default_intent_view_func is not None):
             result = self._map_intent_to_view_func(self.request.intent)()
         elif request_type == 'Display.ElementSelected' and self._display_element_selected_func:
             result = self._display_element_selected_func()
@@ -833,7 +859,7 @@ class Ask(object):
             argspec = inspect.getfullargspec(view_func)
         else:
             argspec = inspect.getargspec(view_func)
-            
+
         arg_names = argspec.args
         arg_values = self._map_params_to_view_args(intent.name, arg_names)
 
@@ -852,11 +878,12 @@ class Ask(object):
 
     def _map_purchase_request_to_func(self, purchase_request_type):
         """Provides appropriate parameters to the on_purchase functions."""
-        
+
         if purchase_request_type in self._intent_view_funcs:
             view_func = self._intent_view_funcs[purchase_request_type]
         else:
-            raise NotImplementedError('Request type "{}" not found and no default view specified.'.format(purchase_request_type)) 
+            raise NotImplementedError(
+                'Request type "{}" not found and no default view specified.'.format(purchase_request_type))
 
         argspec = inspect.getargspec(view_func)
         arg_names = argspec.args

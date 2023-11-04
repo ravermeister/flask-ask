@@ -5,7 +5,6 @@ import aniso8601
 
 from . import logger
 
-
 _DATE_PATTERNS = {
     # "today", "tomorrow", "november twenty-fifth": 2015-11-25
     '^\d{4}-\d{2}-\d{2}$': '%Y-%m-%d',

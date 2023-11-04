@@ -5,10 +5,10 @@ Stream cache functions
 
 def push_stream(cache, user_id, stream):
     """
-    Push a stream onto the stream stack in cache.
+    Push a stream onto the stream stack in the cache.
 
     :param cache: werkzeug BasicCache-like object
-    :param user_id: id of user, used as key in cache
+    :param user_id: id of user, used as a key in cache
     :param stream: stream object to push onto stack
 
     :return: True on successful update,
@@ -30,7 +30,7 @@ def pop_stream(cache, user_id):
     is empty after pop, it deletes the stack.
 
     :param cache: werkzeug BasicCache-like object
-    :param user_id: id of user, used as key in cache
+    :param user_id: id of user, used as a key in cache
 
     :return: top item from stack, otherwise None
     """
@@ -73,7 +73,7 @@ def top_stream(cache, user_id):
     """
     if not user_id:
         return None
-    
+
     stack = cache.get(user_id)
     if stack is None:
         return None
